@@ -28,6 +28,7 @@ spec:
             - sh
             - -c
             - |
+                yum install -y jq
                 aws secretsmanager get-secret-value --secret-id MysqlRootPassword --query 'SecretString' --output text | jq -r .mysql-root-password > /tmp/mysql-root-password.txt
                 echo "Secret placed successfully"
                 cat /tmp/mysql-root-password.txt
