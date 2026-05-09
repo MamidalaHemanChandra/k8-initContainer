@@ -1,53 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mysql
+  # these are replica set labels
+  labels:
+    project: roboshop
+    component: mysql
+    tier: db
 spec:
   replicas: 1
   selector:
+    # these labels are used to select pods
     matchLabels:
       project: roboshop
       component: mysql
-      tier: database
+      tier: db
+  # pod definition
   template:
     metadata:
       labels:
         project: roboshop
         component: mysql
-        tier: database
+        tier: db
     spec:
-      serviceAccountName: my-serviceaccount
-
-      volumes:
-      - name: secret-vol
-        emptyDir: {}
-
+      serviceAccount: my-serviceaccount
       initContainers:
       - name: fetch-secret
         image: amazon/aws-cli
         command:
-          - sh
-          - -c
-          - |
-              yum install -y jq && \
-              aws secretsmanager get-secret-value \
-                --secret-id Mysql/Password \
-                --query SecretString \
-                --output text | jq -r '.["mysql-password"]' > /tmp/mysql-root-password.txt
+        - sh
+        - -c
+        - |
+            aws secretsmanager get-secret-value --secret-id Mysql/Password --query 'SecretString' --output text | jq -r '.["mysql-password"]' > /tmp/mysql-root-password.txt
         volumeMounts:
-        - name: secret-vol
+        - name: mysql-secret
           mountPath: /tmp
-
       containers:
       - name: mysql
         image: mamidalahemanchandra/mysql:v2
         imagePullPolicy: Always
-        command:
-          - sh
-          - -c
-          - |
-              export MYSQL_ROOT_PASSWORD=$(cat /tmp/mysql-root-password.txt) && \
-              exec docker-entrypoint.sh mysqld
         volumeMounts:
-        - name: secret-vol
+        - name: mysql-secret
           mountPath: /tmp
+      volumes:
+        - name: mysql-secret
+          emptyDir: {}
