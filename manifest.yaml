@@ -3,10 +3,6 @@ kind: Deployment
 metadata:
   name: mysql
   namespace: roboshop
-  labels:
-    project: roboshop
-    component: mysql
-    tier: database
 spec:
   replicas: 1
   selector:
@@ -21,22 +17,38 @@ spec:
         component: mysql
         tier: database
     spec:
+      serviceAccountName: my-serviceaccount
+
+      volumes:
+      - name: secret-vol
+        emptyDir: {}
+
+      initContainers:
+      - name: fetch-secret
+        image: amazon/aws-cli
+        command:
+          - sh
+          - -c
+          - |
+              yum install -y jq && \
+              aws secretsmanager get-secret-value \
+                --secret-id Mysql/Password \
+                --query SecretString \
+                --output text | jq -r '.["mysql-password"]' > /tmp/mysql-root-password.txt
+        volumeMounts:
+        - name: secret-vol
+          mountPath: /tmp
+
       containers:
       - name: mysql
-        image: mamidalahemanchandra/mysql:v1
+        image: mamidalahemanchandra/mysql:v2
         imagePullPolicy: Always
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql
-  namespace: roboshop
-spec:
-  selector:
-    project: roboshop
-    component: mysql
-    tier: database
-  ports:
-  - protocol: TCP
-    port: 3306
-    targetPort: 3306
+        command:
+          - sh
+          - -c
+          - |
+              export MYSQL_ROOT_PASSWORD=$(cat /tmp/mysql-root-password.txt) && \
+              exec docker-entrypoint.sh mysqld
+        volumeMounts:
+        - name: secret-vol
+          mountPath: /tmp
