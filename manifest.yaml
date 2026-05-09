@@ -28,9 +28,9 @@ spec:
             - sh
             - -c
             - |
-              aws secretsmanager get-secret-value --secret-id MysqlRootPassword --query SecretString --output text > /tmp/mysql-root-password.txt
-              echo "Secret placed successfully"
-              cat /tmp/mysql-root-password.txt
+                aws secretsmanager get-secret-value --secret-id MysqlRootPassword --query 'SecretString' --output text | jq -r .mysql-root-password > /tmp/mysql-root-password.txt
+                echo "Secret placed successfully"
+                cat /tmp/mysql-root-password.txt
           volumeMounts:
             - name: mysql-secret-vol
               mountPath: /tmp
