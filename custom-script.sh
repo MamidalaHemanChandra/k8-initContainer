@@ -1,13 +1,16 @@
 #!/bin/bash
+set -e
 
-if [ -f /tmp/mysql-root-password.txt ];then
-    Password=$(cat /tmp/mysql-root-password.txt )
-    echo "Mysql Password accessed"
+PASSWORD_FILE="/tmp/mysql-root-password.txt"
+
+if [ -f "$PASSWORD_FILE" ]; then
+    export MYSQL_ROOT_PASSWORD=$(cat "$PASSWORD_FILE")
+    echo "MySQL root password loaded successfully"
+    rm -f "$PASSWORD_FILE"
 else
-    echo "Mysql Password not found"
+    echo "ERROR: Password file not found"
     exit 1
 fi
 
-export MYSQL_ROOT_PASSWORD=$Password
-rm /tmp/mysql-root-password.txt
+# Start official MySQL entrypoint
 exec /usr/local/bin/docker-entrypoint.sh mysqld

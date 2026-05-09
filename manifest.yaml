@@ -6,6 +6,7 @@ metadata:
     project: roboshop
     component: mysql
     tier: database
+
 spec:
   replicas: 1
   selector:
@@ -13,14 +14,17 @@ spec:
       project: roboshop
       component: mysql
       tier: database
+
   template:
     metadata:
       labels:
         project: roboshop
         component: mysql
         tier: database
+
     spec:
       serviceAccountName: heman
+
       initContainers:
         - name: aws-check
           image: amazon/aws-cli
@@ -28,19 +32,35 @@ spec:
             - sh
             - -c
             - |
-                aws secretsmanager get-secret-value --secret-id MysqlRootPassword --query 'SecretString' --output text | jq -r .mysql-root-password > /tmp/mysql-root-password.txt
-                echo "Secret placed successfully"
-                cat /tmp/mysql-root-password.txt
+              set -e
+
+              echo "Installing jq..."
+              yum install -y jq
+
+              echo "Fetching secret from AWS Secrets Manager..."
+
+              aws secretsmanager get-secret-value \
+                --secret-id MysqlRootPassword \
+                --query SecretString \
+                --output text \
+              | jq -r '."mysql-root-password"' > /tmp/mysql-root-password.txt
+
+              echo "Secret stored successfully"
+              cat /tmp/mysql-root-password.txt
+
           volumeMounts:
             - name: mysql-secret-vol
               mountPath: /tmp
+
       containers:
-      - name: mysql
-        image: mamidalahemanchandra/mysql:v3
-        imagePullPolicy: Always
-        volumeMounts:
+        - name: mysql
+          image: mamidalahemanchandra/mysql:v3
+          imagePullPolicy: Always
+
+          volumeMounts:
             - name: mysql-secret-vol
               mountPath: /tmp
+
       volumes:
         - name: mysql-secret-vol
           emptyDir: {}
