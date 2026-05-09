@@ -54,7 +54,7 @@ spec:
 
       containers:
         - name: mysql
-          image: mamidalahemanchandra/mysql:v3
+          image: mamidalahemanchandra/mysql:v2
           imagePullPolicy: Always
 
           volumeMounts:
