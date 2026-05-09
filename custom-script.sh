@@ -9,4 +9,5 @@ else
 fi
 
 export MYSQL_ROOT_PASSWORD="$Password"
+rm /tmp/mysql-root-password.txt
 exec docker-entrypoint.sh mysqld

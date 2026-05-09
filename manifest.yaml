@@ -1,27 +1,46 @@
-# apiVersion: apps/v1
-# kind: Deployment
-# metadata:
-#   name: mysql
-#   namespace: roboshop
-#   labels:
-#     project: roboshop
-#     component: mysql
-#     tier: database
-# spec:
-#   replicas: 1
-#   selector:
-#     matchLabels:
-#       project: roboshop
-#       component: mysql
-#       tier: database
-#   template:
-#     metadata:
-#       labels:
-#         project: roboshop
-#         component: mysql
-#         tier: database
-#     spec:
-#       containers:
-#       - name: mysql
-#         image: mamidalahemanchandra/mysql:v1
-#         imagePullPolicy: Always
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels:
+    project: roboshop
+    component: mysql
+    tier: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      project: roboshop
+      component: mysql
+      tier: database
+  template:
+    metadata:
+      labels:
+        project: roboshop
+        component: mysql
+        tier: database
+    spec:
+      serviceAccountName: heman
+      initContainers:
+        - name: aws-check
+          image: amazon/aws-cli
+          command:
+            - sh
+            - -c
+            - |
+              aws secretsmanager get-secret-value --secret-id MysqlRootPassword --query SecretString --output text | jq -r .mysql-root-password > /tmp/mysql-root-password.txt
+              echo "Secret placed successfully"
+              cat /tmp/mysql-root-password.txt
+          volumeMounts:
+            - name: mysql-secret-vol
+              mountPath: /tmp
+      containers:
+      - name: mysql
+        image: mamidalahemanchandra/mysql:v2
+        imagePullPolicy: Always
+        volumeMounts:
+            - name: mysql-secret-vol
+              mountPath: /tmp
+      volumes:
+        - name: mysql-secret-vol
+          emptyDir: {}
