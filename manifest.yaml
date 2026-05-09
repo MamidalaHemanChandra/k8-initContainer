@@ -28,7 +28,6 @@ spec:
             - sh
             - -c
             - |
-                yum install -y jq
                 aws secretsmanager get-secret-value --secret-id MysqlRootPassword --query 'SecretString' --output text | jq -r .mysql-root-password > /tmp/mysql-root-password.txt
                 echo "Secret placed successfully"
                 cat /tmp/mysql-root-password.txt
@@ -37,7 +36,7 @@ spec:
               mountPath: /tmp
       containers:
       - name: mysql
-        image: mamidalahemanchandra/mysql:v2
+        image: mamidalahemanchandra/mysql:v3
         imagePullPolicy: Always
         volumeMounts:
             - name: mysql-secret-vol
